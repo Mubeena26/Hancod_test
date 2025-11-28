@@ -6,6 +6,7 @@ import 'package:hancord_test/features/home/presentation/widgets/home_header.dart
 import 'package:hancord_test/features/home/presentation/widgets/home_search_bar.dart';
 import 'package:hancord_test/features/home/presentation/widgets/available_services_section.dart';
 import 'package:hancord_test/features/home/presentation/widgets/cleaning_services_section.dart';
+import 'package:hancord_test/features/profile/presentation/screens/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -54,6 +55,26 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             selectedIndex = index;
           });
+
+          // Handle navigation based on selected index
+          if (index == 2) {
+            // Navigate to Profile/Account screen
+            Navigator.of(context)
+                .push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                )
+                .then((_) {
+                  // Reset to Home when returning from Profile screen
+                  if (mounted) {
+                    setState(() {
+                      selectedIndex = 0;
+                    });
+                  }
+                });
+          }
+          // Add other navigation cases as needed (index 0 = Home, index 1 = Bookings)
         },
       ),
     );

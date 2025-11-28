@@ -335,7 +335,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             6,
             (index) => SizedBox(
               width: 48,
-              height: 56,
+              height: 60,
               child: TextField(
                 controller: _controllers[index],
                 focusNode: _focusNodes[index],

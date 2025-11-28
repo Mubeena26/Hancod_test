@@ -3,12 +3,12 @@ import 'package:hancord_test/core/errors/failures.dart';
 import 'package:hancord_test/features/auth/domain/entities/user.dart';
 import 'package:hancord_test/features/auth/domain/repositories/auth_repository.dart';
 
-class LoginWithGoogle {
+class VerifyPhoneOtp {
   final AuthRepository repository;
 
-  LoginWithGoogle(this.repository);
+  VerifyPhoneOtp(this.repository);
 
-  Future<Either<Failure, User>> call() async {
-    return await repository.signInWithGoogle();
+  Future<Either<Failure, User>> call(String verificationId, String otp) async {
+    return await repository.verifyOtp(verificationId, otp);
   }
 }

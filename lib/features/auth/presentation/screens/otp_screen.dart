@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hancord_test/core/utils/colors.dart';
+import 'package:hancord_test/features/auth/presentation/providers/auth_providers.dart';
+import 'package:hancord_test/features/auth/presentation/providers/auth_state.dart';
 import 'package:hancord_test/features/home/presentation/screens/home_screen.dart';
 
-class OtpScreen extends StatefulWidget {
+class OtpScreen extends ConsumerStatefulWidget {
   const OtpScreen({super.key});
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  ConsumerState<OtpScreen> createState() => _OtpScreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
+class _OtpScreenState extends ConsumerState<OtpScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final List<TextEditingController> _controllers = List.generate(
     6,
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  bool _otpSent = false;
   String _phoneNumber = '';
   bool _canResend = false;
   int _resendTimer = 30;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -39,19 +36,42 @@ class _OtpScreenState extends State<OtpScreen> {
     super.dispose();
   }
 
-  void _sendOtp() {
+  Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
-    if (phone.isNotEmpty) {
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a phone number'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Format phone number (add + if not present)
+    String formattedPhone = phone;
+    if (!formattedPhone.startsWith('+')) {
+      // Assume default country code if not provided
+      formattedPhone = '+1$formattedPhone';
+    }
+
+    final authController = ref.read(authControllerProvider.notifier);
+    await authController.sendOtp(formattedPhone);
+
+    final authState = ref.read(authControllerProvider);
+    if (authState.isOtpSent && authState.verificationId != null) {
       setState(() {
         _phoneNumber = phone;
-        _otpSent = true;
       });
       _startResendTimer();
       // Auto-focus first OTP field
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNodes[0].requestFocus();
       });
-      // Handle send OTP API call here
+    } else if (authState.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authState.error!), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -92,20 +112,42 @@ class _OtpScreenState extends State<OtpScreen> {
     }
   }
 
-  void _verifyOtp() {
+  Future<void> _verifyOtp() async {
     final otp = _controllers.map((c) => c.text).join();
-    if (otp.length == 6) {
-      // Handle OTP verification
-      // Navigator.pushReplacement(...);
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter complete OTP'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final authController = ref.read(authControllerProvider.notifier);
+    await authController.verifyOtp(otp);
+
+    final authState = ref.read(authControllerProvider);
+    if (authState.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(authState.error!), backgroundColor: Colors.red),
+      );
+      // Clear OTP fields on error
+      for (var controller in _controllers) {
+        controller.clear();
+      }
+      _focusNodes[0].requestFocus();
     }
   }
 
   String _formatPhoneNumber(String phone) {
     // Format phone number for display (e.g., +1 (234) 567-8901)
-    if (phone.length >= 10) {
-      final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
+    final cleaned = phone.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleaned.length >= 10) {
       if (cleaned.length == 10) {
         return '(${cleaned.substring(0, 3)}) ${cleaned.substring(3, 6)}-${cleaned.substring(6)}';
+      } else if (cleaned.length == 11 && cleaned.startsWith('1')) {
+        return '+1 (${cleaned.substring(1, 4)}) ${cleaned.substring(4, 7)}-${cleaned.substring(7)}';
       }
     }
     return phone;
@@ -113,6 +155,20 @@ class _OtpScreenState extends State<OtpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+    final isOtpSent = authState.isOtpSent;
+
+    // Listen to auth state changes and navigate to home if authenticated
+    ref.listen<AsyncValue>(authStateProvider, (previous, next) {
+      next.whenData((user) {
+        if (user != null && mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      });
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -126,13 +182,15 @@ class _OtpScreenState extends State<OtpScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: _otpSent ? _buildOtpView() : _buildPhoneInputView(),
+          child: isOtpSent
+              ? _buildOtpView(authState)
+              : _buildPhoneInputView(authState),
         ),
       ),
     );
   }
 
-  Widget _buildPhoneInputView() {
+  Widget _buildPhoneInputView(AuthState authState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -162,6 +220,7 @@ class _OtpScreenState extends State<OtpScreen> {
         TextField(
           controller: _phoneController,
           keyboardType: TextInputType.phone,
+          enabled: !authState.isLoading,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -199,13 +258,7 @@ class _OtpScreenState extends State<OtpScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-              );
-            },
-            // _sendOtp,
+            onPressed: authState.isLoading ? null : _sendOtp,
             style: ElevatedButton.styleFrom(
               backgroundColor: PColors.color4FB15E,
               foregroundColor: Colors.white,
@@ -213,22 +266,32 @@ class _OtpScreenState extends State<OtpScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 0,
+              disabledBackgroundColor: Colors.grey[300],
             ),
-            child: const Text(
-              'Send OTP',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'rf-dewi',
-              ),
-            ),
+            child: authState.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    'Send OTP',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'rf-dewi',
+                    ),
+                  ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildOtpView() {
+  Widget _buildOtpView(AuthState authState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -279,6 +342,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
                 maxLength: 1,
+                enabled: !authState.isLoading,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
@@ -316,9 +380,7 @@ class _OtpScreenState extends State<OtpScreen> {
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: () {
-              _verifyOtp();
-            },
+            onPressed: authState.isLoading ? null : _verifyOtp,
             style: ElevatedButton.styleFrom(
               backgroundColor: PColors.color4FB15E,
               foregroundColor: Colors.white,
@@ -326,15 +388,25 @@ class _OtpScreenState extends State<OtpScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 0,
+              disabledBackgroundColor: Colors.grey[300],
             ),
-            child: const Text(
-              'Verify',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'rf-dewi',
-              ),
-            ),
+            child: authState.isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Text(
+                    'Verify',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'rf-dewi',
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 24),
@@ -342,10 +414,12 @@ class _OtpScreenState extends State<OtpScreen> {
         Center(
           child: _canResend
               ? TextButton(
-                  onPressed: () {
-                    _startResendTimer();
-                    // Handle resend OTP
-                  },
+                  onPressed: authState.isLoading
+                      ? null
+                      : () {
+                          _startResendTimer();
+                          _sendOtp();
+                        },
                   child: Text(
                     'Resend Code',
                     style: TextStyle(

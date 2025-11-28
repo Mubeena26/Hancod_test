@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hancord_test/core/utils/colors.dart';
-import 'package:hancord_test/core/utils/images.dart';
 import 'package:hancord_test/core/utils/textStyles..dart';
+import 'package:hancord_test/features/services/domain/entitities/service_model.dart';
 
 class ServiceCardWidget extends StatelessWidget {
-  final int itemId;
+  final ServiceModel service;
   final bool isInCart;
   final int quantity;
   final VoidCallback onAddToCart;
@@ -13,7 +13,7 @@ class ServiceCardWidget extends StatelessWidget {
 
   const ServiceCardWidget({
     super.key,
-    required this.itemId,
+    required this.service,
     required this.isInCart,
     required this.quantity,
     required this.onAddToCart,
@@ -52,7 +52,7 @@ class ServiceCardWidget extends StatelessWidget {
                     height: 100,
                     color: Color(0xFFF5F5F5),
                     child: Image.asset(
-                      Images.service,
+                      service.image,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
@@ -75,7 +75,7 @@ class ServiceCardWidget extends StatelessWidget {
                           Icon(Icons.star, color: Colors.amber, size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            '(4.2/5) 23 Orders',
+                            '(${service.rating}/5) ${service.orderCount} Orders',
                             style: getTextStylNunito(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -87,7 +87,7 @@ class ServiceCardWidget extends StatelessWidget {
                       const SizedBox(height: 6),
                       // Service Name
                       Text(
-                        'Bathroom Cleaning',
+                        service.name,
                         style: getTextStylNunito(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -97,7 +97,7 @@ class ServiceCardWidget extends StatelessWidget {
                       const SizedBox(height: 4),
                       // Duration
                       Text(
-                        '60 Minutes',
+                        service.duration,
                         style: getTextStylNunito(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -107,7 +107,7 @@ class ServiceCardWidget extends StatelessWidget {
                       const SizedBox(height: 8),
                       // Price
                       Text(
-                        '₹ 499.00',
+                        '₹ ${service.price.toStringAsFixed(2)}',
                         style: getTextStylNunito(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

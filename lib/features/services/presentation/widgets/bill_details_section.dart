@@ -4,8 +4,8 @@ import 'package:hancord_test/core/utils/textStyles..dart';
 import 'package:hancord_test/features/services/presentation/widgets/custom_painters.dart';
 
 class BillDetailsSection extends StatelessWidget {
-  final double kitchenCleaningPrice;
-  final double fanCleaningPrice;
+  final double subtotal;
+  final List<Map<String, dynamic>> cartItems;
   final double taxesAndFees;
   final bool couponApplied;
   final double couponDiscount;
@@ -14,8 +14,8 @@ class BillDetailsSection extends StatelessWidget {
 
   const BillDetailsSection({
     super.key,
-    required this.kitchenCleaningPrice,
-    required this.fanCleaningPrice,
+    required this.subtotal,
+    required this.cartItems,
     required this.taxesAndFees,
     required this.couponApplied,
     required this.couponDiscount,
@@ -25,10 +25,17 @@ class BillDetailsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate dynamic height based on number of items
+    final int itemCount = cartItems.length;
+    final double baseHeight = 180.0; // Base height for taxes, coupon, total, etc.
+    final double itemHeight = 26.0; // Height per item (14px text + 12px spacing)
+    final double calculatedHeight = baseHeight + (itemCount * itemHeight);
+    final double containerHeight = calculatedHeight < 240 ? 240 : calculatedHeight;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       width: double.infinity, // full width
-      height: 240, // increased height to fit all details
+      height: containerHeight, // dynamic height based on items
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(
@@ -80,16 +87,25 @@ class BillDetailsSection extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildBillRow(
-                  'Kitchen Cleaning',
-                  '₹${kitchenCleaningPrice.toInt()}',
-                ),
-                const SizedBox(height: 12),
-                _buildBillRow(
-                  'Fan Cleaning',
-                  '₹${fanCleaningPrice.toInt()}',
-                ),
-                const SizedBox(height: 12),
+                // Show individual cart items
+                ...cartItems.asMap().entries.map((entry) {
+                  final item = entry.value;
+                  final itemName = item['name'] as String;
+                  final itemQuantity = item['quantity'] as int;
+                  final itemPrice = (item['totalPrice'] ?? ((item['price'] as num) * itemQuantity)) as num;
+                  return Column(
+                    children: [
+                      _buildBillRow(
+                        itemQuantity > 1 
+                            ? '$itemName (x$itemQuantity)' 
+                            : itemName,
+                        '₹${itemPrice.toInt()}',
+                      ),
+                      if (entry.key < cartItems.length - 1) const SizedBox(height: 12),
+                    ],
+                  );
+                }).toList(),
+                if (cartItems.isNotEmpty) const SizedBox(height: 12),
                 _buildBillRow(
                   'Taxes and Fees',
                   '₹${taxesAndFees.toInt()}',

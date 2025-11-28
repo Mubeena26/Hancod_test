@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hancord_test/core/utils/images.dart';
 import 'package:hancord_test/core/utils/textStyles..dart';
 import 'package:hancord_test/features/services/presentation/widgets/selected_services_section.dart';
@@ -7,21 +8,16 @@ import 'package:hancord_test/features/services/presentation/widgets/coupon_code_
 import 'package:hancord_test/features/services/presentation/widgets/wallet_balance_info.dart';
 import 'package:hancord_test/features/services/presentation/widgets/bill_details_section.dart';
 import 'package:hancord_test/features/services/presentation/widgets/grand_total_card.dart';
+import 'package:hancord_test/features/services/presentation/providers/cart_provider.dart';
 
-class CartScreen extends StatefulWidget {
+class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
 
   @override
-  State<CartScreen> createState() => _CartScreenState();
+  ConsumerState<CartScreen> createState() => _CartScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
-  // Sample cart data
-  final List<Map<String, dynamic>> selectedServices = [
-    {'name': 'Kitchen Cleaning', 'quantity': 1, 'price': 125},
-    {'name': 'Fan Cleaning', 'quantity': 2, 'price': 225},
-  ];
-
+class _CartScreenState extends ConsumerState<CartScreen> {
   final List<Map<String, dynamic>> frequentlyAddedServices = [
     {'name': 'Bathroom Cleaning', 'price': 500, 'image': Images.service},
     {'name': 'Bathroom Cleaning', 'price': 500, 'image': Images.service},
@@ -29,16 +25,12 @@ class _CartScreenState extends State<CartScreen> {
   ];
 
   String couponCode = '';
-  bool couponApplied = true; // Set to true to show the applied coupon
+  bool couponApplied = false;
   final TextEditingController couponController = TextEditingController();
 
   // Bill details
-  double get kitchenCleaningPrice => 499.0;
-  double get fanCleaningPrice => 499.0;
   double get taxesAndFees => 50.0;
-  double get couponDiscount => 150.0;
-  double get total =>
-      kitchenCleaningPrice + fanCleaningPrice + taxesAndFees - couponDiscount;
+  double get couponDiscount => couponApplied ? 150.0 : 0.0;
 
   @override
   void dispose() {
@@ -48,7 +40,148 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cartState = ref.watch(cartProvider);
+    final cartNotifier = ref.read(cartProvider.notifier);
     final double bottomPadding = 16.0;
+
+    // Convert cart items to the format expected by SelectedServicesSection
+    final List<Map<String, dynamic>> selectedServices = cartState.items.values
+        .map(
+          (cartItem) => {
+            'id': cartItem.serviceId,
+            'name': cartItem.service.name,
+            'quantity': cartItem.quantity,
+            'price': cartItem.service.price,
+            'totalPrice': cartItem.totalPrice,
+          },
+        )
+        .toList();
+
+    // Calculate bill details from cart items
+    final double subtotal = cartState.totalPrice;
+    final double total = subtotal + taxesAndFees - couponDiscount;
+
+    // Show loading or empty state
+    if (cartState.isLoading) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: AppBar(
+            backgroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  width: 43,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xffF7F8F8),
+                  ),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Icon(
+                        Icons.arrow_back_ios,
+                        size: 20,
+                        color: Color(0xff2B2B2B),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            elevation: 0,
+            centerTitle: true,
+            title: Text(
+              'Cart',
+              style: getTextStylNunito(
+                color: const Color(0xff090F47),
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Show empty cart state
+    if (selectedServices.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: AppBar(
+            backgroundColor: Colors.white,
+            automaticallyImplyLeading: false,
+            leading: Padding(
+              padding: const EdgeInsets.only(left: 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  width: 43,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xffF7F8F8),
+                  ),
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Icon(
+                        Icons.arrow_back_ios,
+                        size: 20,
+                        color: Color(0xff2B2B2B),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            elevation: 0,
+            centerTitle: true,
+            title: Text(
+              'Cart',
+              style: getTextStylNunito(
+                color: const Color(0xff090F47),
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.shopping_cart_outlined,
+                size: 80,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Your cart is empty',
+                style: getTextStylNunito(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -114,22 +247,20 @@ class _CartScreenState extends State<CartScreen> {
                     SelectedServicesSection(
                       selectedServices: selectedServices,
                       onRemoveService: (index) {
-                        setState(() {
-                          selectedServices.removeAt(index);
-                        });
+                        final serviceId = selectedServices[index]['id'] as int;
+                        cartNotifier.removeFromCart(serviceId);
                       },
                       onDecrementQuantity: (index) {
-                        setState(() {
-                          selectedServices[index]['quantity']--;
-                        });
+                        final serviceId = selectedServices[index]['id'] as int;
+                        cartNotifier.decrementQuantity(serviceId);
                       },
                       onIncrementQuantity: (index) {
-                        setState(() {
-                          selectedServices[index]['quantity']++;
-                        });
+                        final serviceId = selectedServices[index]['id'] as int;
+                        cartNotifier.incrementQuantity(serviceId);
                       },
                       onAddMoreServices: () {
-                        // Navigate to add more
+                        Navigator.pop(context);
+                        // Navigate to service listing
                       },
                     ),
                     const SizedBox(height: 24),
@@ -147,7 +278,10 @@ class _CartScreenState extends State<CartScreen> {
                     CouponCodeSection(
                       couponController: couponController,
                       onApplyCoupon: () {
-                        // Apply coupon logic
+                        setState(() {
+                          couponCode = couponController.text.trim();
+                          couponApplied = couponCode.isNotEmpty;
+                        });
                       },
                     ),
                     const SizedBox(height: 16),
@@ -158,8 +292,8 @@ class _CartScreenState extends State<CartScreen> {
 
                     // Bill Details Section
                     BillDetailsSection(
-                      kitchenCleaningPrice: kitchenCleaningPrice,
-                      fanCleaningPrice: fanCleaningPrice,
+                      subtotal: subtotal,
+                      cartItems: selectedServices,
                       taxesAndFees: taxesAndFees,
                       couponApplied: couponApplied,
                       couponDiscount: couponDiscount,

@@ -1,0 +1,98 @@
+import 'package:hancord_test/core/utils/images.dart';
+import 'package:hancord_test/features/services/domain/entitities/service_model.dart';
+
+class DummyServicesData {
+  static List<ServiceModel> getServices() {
+    return [
+      ServiceModel(
+        id: 1,
+        name: 'Bathroom Cleaning',
+        description:
+            'Deep cleaning of bathroom including tiles, fixtures, and sanitization',
+        price: 499.00,
+        image: Images.service,
+        duration: '60 Minutes',
+        rating: 4.2,
+        orderCount: 23,
+        category: 'Maid Services',
+      ),
+      ServiceModel(
+        id: 2,
+        name: 'Kitchen Cleaning',
+        description: 'Complete kitchen cleaning with appliance cleaning',
+        price: 599.00,
+        image: Images.homeCleaning,
+        duration: '90 Minutes',
+        rating: 4.5,
+        orderCount: 45,
+        category: 'Maid Services',
+      ),
+      ServiceModel(
+        id: 3,
+        name: 'Carpet Cleaning',
+        description: 'Professional carpet deep cleaning and stain removal',
+        price: 799.00,
+        image: Images.carpetCleaning,
+        duration: '120 Minutes',
+        rating: 4.7,
+        orderCount: 18,
+        category: 'Carpet',
+      ),
+      ServiceModel(
+        id: 4,
+        name: 'Sofa Cleaning',
+        description: 'Deep cleaning and sanitization of sofas and upholstery',
+        price: 699.00,
+        image: Images.homeCleaning,
+        duration: '90 Minutes',
+        rating: 4.3,
+        orderCount: 32,
+        category: 'Maid Services',
+      ),
+      ServiceModel(
+        id: 5,
+        name: 'Fan Cleaning',
+        description: 'Complete fan cleaning including blades and motor',
+        price: 299.00,
+        image: Images.service,
+        duration: '30 Minutes',
+        rating: 4.6,
+        orderCount: 67,
+        category: 'Maid Services',
+      ),
+      ServiceModel(
+        id: 6,
+        name: 'Window Cleaning',
+        description: 'Interior and exterior window cleaning',
+        price: 399.00,
+        image: Images.service,
+        duration: '45 Minutes',
+        rating: 4.4,
+        orderCount: 28,
+        category: 'Maid Services',
+      ),
+      ServiceModel(
+        id: 7,
+        name: 'Deep Cleaning',
+        description: 'Complete home deep cleaning service',
+        price: 1299.00,
+        image: Images.homeCleaning,
+        duration: '240 Minutes',
+        rating: 4.8,
+        orderCount: 52,
+        category: 'Deep cleaning',
+      ),
+      ServiceModel(
+        id: 8,
+        name: 'Car Cleaning',
+        description: 'Interior and exterior car cleaning service',
+        price: 899.00,
+        image: Images.service,
+        duration: '90 Minutes',
+        rating: 4.5,
+        orderCount: 41,
+        category: 'Car Cleaning',
+      ),
+    ];
+  }
+}

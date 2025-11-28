@@ -32,10 +32,11 @@ class SelectedServicesSection extends StatelessWidget {
               bottom: index < selectedServices.length - 1 ? 16 : 0,
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Left index + title
+                // Left index + title - Allow full text to be visible
                 Expanded(
+                  flex: 3,
                   child: Row(
                     children: [
                       Text(
@@ -54,16 +55,21 @@ class SelectedServicesSection extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF2B2B2B),
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.clip,
                         ),
                       ),
                     ],
                   ),
                 ),
 
+                SizedBox(width: 8),
+
                 // -------------------------------
                 //   QUANTITY SELECTOR (DESIGN)
                 // -------------------------------
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // MINUS button
                     GestureDetector(
@@ -131,9 +137,9 @@ class SelectedServicesSection extends StatelessWidget {
 
                 SizedBox(width: 16),
 
-                // PRICE
+                // PRICE - Right aligned
                 Text(
-                  '₹${service['price']}',
+                  '₹${((service['totalPrice'] ?? (service['price'] as num) * (service['quantity'] as int)) as num).toInt()}',
                   style: getTextStylNunito(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

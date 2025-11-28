@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hancord_test/core/utils/textStyles..dart';
 import 'package:hancord_test/features/services/presentation/screens/cart_screen.dart';
 import 'package:hancord_test/features/services/presentation/widgets/category_chips_widget.dart';
 import 'package:hancord_test/features/services/presentation/widgets/service_card_widget.dart';
 import 'package:hancord_test/features/services/presentation/widgets/cart_summary_widget.dart';
+import 'package:hancord_test/features/services/presentation/providers/cart_provider.dart';
+import 'package:hancord_test/features/services/data/dummy_services_data.dart';
+import 'package:hancord_test/features/services/domain/entitities/service_model.dart';
 
-class ServiceListingScreen extends StatefulWidget {
+class ServiceListingScreen extends ConsumerStatefulWidget {
   const ServiceListingScreen({super.key});
 
   @override
-  State<ServiceListingScreen> createState() => _ServiceListingScreenState();
+  ConsumerState<ServiceListingScreen> createState() =>
+      _ServiceListingScreenState();
 }
 
-class _ServiceListingScreenState extends State<ServiceListingScreen> {
+class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
   int selectedCategoryIndex = 1; // Maid Services is selected
-  Map<int, int> cartItems = {1: 1, 2: 1}; // Items 1 and 2 are in cart
 
   final List<String> categories = [
     'Deep cleaning',
@@ -22,6 +26,21 @@ class _ServiceListingScreenState extends State<ServiceListingScreen> {
     'Car Cleaning',
     'Carpet',
   ];
+
+  late List<ServiceModel> allServices;
+  List<ServiceModel> get filteredServices {
+    if (selectedCategoryIndex >= categories.length) return allServices;
+    final selectedCategory = categories[selectedCategoryIndex];
+    return allServices
+        .where((service) => service.category == selectedCategory)
+        .toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    allServices = DummyServicesData.getServices();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,6 +130,8 @@ class _ServiceListingScreenState extends State<ServiceListingScreen> {
   }
 
   Widget _buildServiceList() {
+    final services = filteredServices;
+
     return ListView.builder(
       padding: EdgeInsets.only(
         left: 20,
@@ -118,34 +139,25 @@ class _ServiceListingScreenState extends State<ServiceListingScreen> {
         top: 16,
         bottom: 140, // Extra padding for floating cart summary
       ),
-      itemCount: 6, // 4 service cards visible
+      itemCount: services.length,
       itemBuilder: (context, index) {
-        final itemId = index;
-        final isInCart = cartItems.containsKey(itemId);
-        final quantity = cartItems[itemId] ?? 0;
+        final service = services[index];
+        final cartState = ref.watch(cartProvider);
+        final isInCart = cartState.items.containsKey(service.id);
+        final quantity = cartState.items[service.id]?.quantity ?? 0;
 
         return ServiceCardWidget(
-          itemId: itemId,
+          service: service,
           isInCart: isInCart,
           quantity: quantity,
           onAddToCart: () {
-            setState(() {
-              cartItems[itemId] = 1;
-            });
+            ref.read(cartProvider.notifier).addToCart(service);
           },
           onIncrementQuantity: () {
-            setState(() {
-              cartItems[itemId] = quantity + 1;
-            });
+            ref.read(cartProvider.notifier).incrementQuantity(service.id);
           },
           onDecrementQuantity: () {
-            setState(() {
-              if (quantity > 1) {
-                cartItems[itemId] = quantity - 1;
-              } else {
-                cartItems.remove(itemId);
-              }
-            });
+            ref.read(cartProvider.notifier).decrementQuantity(service.id);
           },
         );
       },
@@ -153,10 +165,9 @@ class _ServiceListingScreenState extends State<ServiceListingScreen> {
   }
 
   Widget _buildCartSummary() {
-    final totalItems = cartItems.values.fold(0, (sum, qty) => sum + qty);
-    final totalPrice = totalItems > 0
-        ? (totalItems == 2 ? 3355.0 : totalItems * 499.0)
-        : 0.0;
+    final cartState = ref.watch(cartProvider);
+    final totalItems = cartState.totalItems;
+    final totalPrice = cartState.totalPrice;
 
     return CartSummaryWidget(
       totalItems: totalItems,

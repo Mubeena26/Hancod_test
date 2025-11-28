@@ -1,12 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hancord_test/core/utils/colors.dart';
+import 'package:hancord_test/features/auth/presentation/providers/auth_providers.dart';
 import 'package:hancord_test/features/auth/presentation/screens/otp_screen.dart';
+import 'package:hancord_test/features/home/presentation/screens/home_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+    final authController = ref.read(authControllerProvider.notifier);
+
+    // Listen to auth state changes and navigate to home if authenticated
+    ref.listen<AsyncValue>(authStateProvider, (previous, next) {
+      next.whenData((user) {
+        if (user != null && mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      });
+    });
+
+    // Show error snackbar if there's an error
+    if (authState.error != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authState.error!),
+            backgroundColor: Colors.red,
+          ),
+        );
+        authController.clearError();
+      });
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -41,9 +76,11 @@ class LoginScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Handle Google sign in
-                  },
+                  onPressed: authState.isLoading
+                      ? null
+                      : () async {
+                          await authController.signInWithGoogle();
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFE5E5E5), // Light gray
                     foregroundColor: Colors.black,
@@ -51,23 +88,35 @@ class LoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
+                    disabledBackgroundColor: Colors.grey[300],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Google logo representation
-                      _GoogleLogo(),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Continue with Google',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: 'rf-dewi',
+                  child: authState.isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.black,
+                            ),
+                          ),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Google logo representation
+                            _GoogleLogo(),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Continue with Google',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                fontFamily: 'rf-dewi',
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -76,14 +125,16 @@ class LoginScreen extends StatelessWidget {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const OtpScreen(),
-                      ),
-                    );
-                  },
+                  onPressed: authState.isLoading
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OtpScreen(),
+                            ),
+                          );
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: PColors.color4FB15E,
                     foregroundColor: Colors.white,
@@ -91,6 +142,7 @@ class LoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
+                    disabledBackgroundColor: Colors.grey[300],
                   ),
                   child: const Text(
                     'Phone',

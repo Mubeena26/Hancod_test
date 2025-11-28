@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hancord_test/core/utils/colors.dart';
 import 'package:hancord_test/features/auth/presentation/providers/auth_providers.dart';
 import 'package:hancord_test/features/auth/presentation/providers/auth_state.dart';
+import 'package:hancord_test/features/auth/presentation/providers/otp_screen_provider.dart';
 import 'package:hancord_test/features/home/presentation/screens/home_screen.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
@@ -20,9 +21,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
-  String _phoneNumber = '';
-  bool _canResend = false;
-  int _resendTimer = 30;
 
   @override
   void dispose() {
@@ -60,10 +58,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     final authState = ref.read(authControllerProvider);
     if (authState.isOtpSent && authState.verificationId != null) {
-      setState(() {
-        _phoneNumber = phone;
-      });
-      _startResendTimer();
+      ref.read(otpScreenProvider.notifier).setPhoneNumber(phone);
+      ref.read(otpScreenProvider.notifier).startResendTimer();
       // Auto-focus first OTP field
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _focusNodes[0].requestFocus();
@@ -73,28 +69,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         SnackBar(content: Text(authState.error!), backgroundColor: Colors.red),
       );
     }
-  }
-
-  void _startResendTimer() {
-    setState(() {
-      _canResend = false;
-      _resendTimer = 30;
-    });
-
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return false;
-
-      bool shouldContinue = true;
-      setState(() {
-        _resendTimer--;
-        if (_resendTimer <= 0) {
-          _canResend = true;
-          shouldContinue = false;
-        }
-      });
-      return shouldContinue;
-    });
   }
 
   void _onOtpChanged(int index, String value) {
@@ -156,6 +130,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+    final otpScreenState = ref.watch(otpScreenProvider);
     final isOtpSent = authState.isOtpSent;
 
     // Listen to auth state changes and navigate to home if authenticated
@@ -183,7 +158,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: isOtpSent
-              ? _buildOtpView(authState)
+              ? _buildOtpView(authState, otpScreenState)
               : _buildPhoneInputView(authState),
         ),
       ),
@@ -291,7 +266,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     );
   }
 
-  Widget _buildOtpView(AuthState authState) {
+  Widget _buildOtpView(AuthState authState, OtpScreenState otpScreenState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -318,7 +293,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             children: [
               const TextSpan(text: 'We sent a verification code to '),
               TextSpan(
-                text: _formatPhoneNumber(_phoneNumber),
+                text: _formatPhoneNumber(otpScreenState.phoneNumber),
                 style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.w500,
@@ -412,12 +387,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
         const SizedBox(height: 24),
         // Resend OTP
         Center(
-          child: _canResend
+          child: otpScreenState.canResend
               ? TextButton(
                   onPressed: authState.isLoading
                       ? null
                       : () {
-                          _startResendTimer();
+                          ref
+                              .read(otpScreenProvider.notifier)
+                              .startResendTimer();
                           _sendOtp();
                         },
                   child: Text(
@@ -431,7 +408,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   ),
                 )
               : Text(
-                  'Resend code in ${_resendTimer}s',
+                  'Resend code in ${otpScreenState.resendTimer}s',
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.grey,

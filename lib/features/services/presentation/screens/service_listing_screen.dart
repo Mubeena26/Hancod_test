@@ -6,29 +6,22 @@ import 'package:hancord_test/features/services/presentation/widgets/category_chi
 import 'package:hancord_test/features/services/presentation/widgets/service_card_widget.dart';
 import 'package:hancord_test/features/services/presentation/widgets/cart_summary_widget.dart';
 import 'package:hancord_test/features/services/presentation/providers/cart_provider.dart';
+import 'package:hancord_test/features/services/presentation/providers/service_listing_provider.dart';
 import 'package:hancord_test/features/services/data/dummy_services_data.dart';
 import 'package:hancord_test/features/services/domain/entitities/service_model.dart';
 
-class ServiceListingScreen extends ConsumerStatefulWidget {
+class ServiceListingScreen extends ConsumerWidget {
   const ServiceListingScreen({super.key});
 
-  @override
-  ConsumerState<ServiceListingScreen> createState() =>
-      _ServiceListingScreenState();
-}
-
-class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
-  int selectedCategoryIndex = 1; // Maid Services is selected
-
-  final List<String> categories = [
+  static final List<String> categories = [
     'Deep cleaning',
     'Maid Services',
     'Car Cleaning',
     'Carpet',
   ];
 
-  late List<ServiceModel> allServices;
-  List<ServiceModel> get filteredServices {
+  List<ServiceModel> _getFilteredServices(int selectedCategoryIndex) {
+    final allServices = DummyServicesData.getServices();
     if (selectedCategoryIndex >= categories.length) return allServices;
     final selectedCategory = categories[selectedCategoryIndex];
     return allServices
@@ -37,13 +30,10 @@ class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    allServices = DummyServicesData.getServices();
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final serviceListingState = ref.watch(serviceListingProvider);
+    final selectedCategoryIndex = serviceListingState.selectedCategoryIndex;
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -106,14 +96,14 @@ class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
                   categories: categories,
                   selectedCategoryIndex: selectedCategoryIndex,
                   onCategorySelected: (index) {
-                    setState(() {
-                      selectedCategoryIndex = index;
-                    });
+                    ref
+                        .read(serviceListingProvider.notifier)
+                        .selectCategory(index);
                   },
                 ),
 
                 // Service List
-                Expanded(child: _buildServiceList()),
+                Expanded(child: _buildServiceList(ref, selectedCategoryIndex)),
               ],
             ),
             // Bottom Cart Summary - Floating above the screen
@@ -121,7 +111,7 @@ class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
               left: 16,
               right: 16,
               bottom: 40,
-              child: _buildCartSummary(),
+              child: _buildCartSummary(context, ref),
             ),
           ],
         ),
@@ -129,8 +119,8 @@ class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
     );
   }
 
-  Widget _buildServiceList() {
-    final services = filteredServices;
+  Widget _buildServiceList(WidgetRef ref, int selectedCategoryIndex) {
+    final services = _getFilteredServices(selectedCategoryIndex);
 
     return ListView.builder(
       padding: EdgeInsets.only(
@@ -164,7 +154,7 @@ class _ServiceListingScreenState extends ConsumerState<ServiceListingScreen> {
     );
   }
 
-  Widget _buildCartSummary() {
+  Widget _buildCartSummary(BuildContext context, WidgetRef ref) {
     final cartState = ref.watch(cartProvider);
     final totalItems = cartState.totalItems;
     final totalPrice = cartState.totalPrice;

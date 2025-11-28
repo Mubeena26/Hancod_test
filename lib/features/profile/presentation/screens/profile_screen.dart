@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:hancord_test/core/utils/colors.dart';
+import 'package:hancord_test/core/utils/svgs.dart';
 import 'package:hancord_test/core/utils/textStyles..dart';
 import 'package:hancord_test/features/auth/presentation/providers/auth_providers.dart';
 import 'package:hancord_test/features/auth/presentation/screens/login_screen.dart';
@@ -43,14 +45,12 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
 
                     // Title: My Account
-                    Center(
-                      child: Text(
-                        'My Account',
-                        style: getTextStyleRfDewi(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: PColors.color353534,
-                        ),
+                    Text(
+                      'My Account',
+                      style: getTextStylNunito(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xff2E2E2E),
                       ),
                     ),
 
@@ -64,13 +64,20 @@ class ProfileScreen extends ConsumerWidget {
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF2D5F3E), // Dark green
-                            borderRadius: BorderRadius.circular(12),
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFF5FCD70), // Lighter green
+                                Color(0xFF0E826B), // Lighter green
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(5),
                           ),
                           child: Center(
                             child: Text(
                               initials,
-                              style: getTextStyleRfDewi(
+                              style: getTextStylNunito(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -88,10 +95,10 @@ class ProfileScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 displayName,
-                                style: getTextStyleRfDewi(
+                                style: getTextStylNunito(
                                   fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  color: PColors.color353534,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xff444444),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -99,10 +106,10 @@ class ProfileScreen extends ConsumerWidget {
                                 phoneNumber.isNotEmpty
                                     ? phoneNumber
                                     : 'No phone number',
-                                style: getTextStyleRfDewi(
+                                style: getTextStylNunito(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
-                                  color: PColors.colorB3B3B3,
+                                  color: Color(0xff444444),
                                 ),
                               ),
                             ],
@@ -121,7 +128,7 @@ class ProfileScreen extends ConsumerWidget {
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F5E9), // Light green
+                        color: const Color(0xFFD7FFF0), // Light green
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -129,18 +136,30 @@ class ProfileScreen extends ConsumerWidget {
                         children: [
                           Text(
                             'Wallet',
-                            style: getTextStyleRfDewi(
+                            style: getTextStylNunito(
                               fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF2D5F3E), // Dark green
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF5FCD70),
                             ),
                           ),
-                          Text(
-                            'Balance - 125',
-                            style: getTextStyleRfDewi(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF2D5F3E), // Dark green
+
+                          /// WHITE SMALL CONTAINER FOR BALANCE
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'Balance - 125',
+                              style: getTextStylNunito(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF5FCD70),
+                              ),
                             ),
                           ),
                         ],
@@ -151,7 +170,7 @@ class ProfileScreen extends ConsumerWidget {
 
                     // Menu Options
                     _buildMenuOption(
-                      icon: Icons.person_outline,
+                      icon: Svgs.editprofile,
                       title: 'Edit Profile',
                       onTap: () {
                         // TODO: Navigate to edit profile screen
@@ -161,7 +180,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     _buildMenuOption(
-                      icon: Icons.location_on_outlined,
+                      icon: Svgs.saved,
                       title: 'Saved Address',
                       onTap: () {
                         // TODO: Navigate to saved address screen
@@ -171,7 +190,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     _buildMenuOption(
-                      icon: Icons.description_outlined,
+                      icon: Svgs.terms,
                       title: 'Terms & Conditions',
                       onTap: () {
                         // TODO: Navigate to terms & conditions screen
@@ -181,7 +200,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     _buildMenuOption(
-                      icon: Icons.description_outlined,
+                      icon: Svgs.terms,
                       title: 'Privacy Policy',
                       onTap: () {
                         // TODO: Navigate to privacy policy screen
@@ -191,7 +210,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     _buildMenuOption(
-                      icon: Icons.people_outline,
+                      icon: Svgs.refer,
                       title: 'Refer a friend',
                       onTap: () {
                         // TODO: Navigate to refer a friend screen
@@ -201,7 +220,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     _buildMenuOption(
-                      icon: Icons.phone_outlined,
+                      icon: Svgs.customer,
                       title: 'Customer Support',
                       onTap: () {
                         // TODO: Navigate to customer support screen
@@ -211,7 +230,7 @@ class ProfileScreen extends ConsumerWidget {
                     const SizedBox(height: 12),
 
                     _buildMenuOption(
-                      icon: Icons.logout_outlined,
+                      icon: Svgs.logout,
                       title: 'Log Out',
                       onTap: () => _handleLogout(context, ref),
                     ),
@@ -244,7 +263,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   Widget _buildMenuOption({
-    required IconData icon,
+    required String icon,
     required String title,
     required VoidCallback onTap,
   }) {
@@ -261,14 +280,14 @@ class ProfileScreen extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: PColors.color555555, size: 24),
-            const SizedBox(width: 16),
+            SvgPicture.asset(icon),
+            const SizedBox(width: 32),
             Text(
               title,
-              style: getTextStyleRfDewi(
+              style: getTextStylNunito(
                 fontSize: 16,
-                fontWeight: FontWeight.w400,
-                color: PColors.color353534,
+                fontWeight: FontWeight.w600,
+                color: Color(0xff444444),
               ),
             ),
           ],

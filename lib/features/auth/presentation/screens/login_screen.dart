@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:hancord_test/core/utils/colors.dart';
+import 'package:hancord_test/core/utils/svgs.dart';
 import 'package:hancord_test/features/auth/presentation/providers/auth_providers.dart';
 import 'package:hancord_test/features/auth/presentation/screens/otp_screen.dart';
 import 'package:hancord_test/features/home/presentation/screens/home_screen.dart';
@@ -82,13 +84,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           await authController.signInWithGoogle();
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE5E5E5), // Light gray
+                    backgroundColor: const Color(0xFFE5E5E5),
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                     disabledBackgroundColor: Colors.grey[300],
+                    padding: EdgeInsets.zero,
                   ),
                   child: authState.isLoading
                       ? const SizedBox(
@@ -101,21 +104,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                         )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Google logo representation
-                            _GoogleLogo(),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Continue with Google',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'rf-dewi',
+                      : Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // keep row compact
+                            children: [
+                              SvgPicture.asset(
+                                Svgs.signInGoogle,
+                                width: 34,
+                                height: 34,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Continue with Google',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  fontFamily: 'rf-dewi',
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                 ),
               ),
@@ -160,65 +168,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
-}
-
-// Custom Google logo widget
-class _GoogleLogo extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(size: const Size(24, 24), painter: _GoogleLogoPainter());
-  }
-}
-
-class _GoogleLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 0;
-
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    final center = Offset(size.width / 2, size.height / 2);
-
-    // Blue section (top-left quarter)
-    paint.color = const Color(0xFF4285F4);
-    canvas.drawArc(rect, -3.14159, 1.5708, false, paint);
-
-    // Red section (top-right quarter)
-    paint.color = const Color(0xFFEA4335);
-    canvas.drawArc(rect, -1.5708, 1.5708, false, paint);
-
-    // Yellow section (bottom-left quarter)
-    paint.color = const Color(0xFFFBBC05);
-    canvas.drawArc(rect, 1.5708, 1.5708, false, paint);
-
-    // Green section (bottom-right quarter)
-    paint.color = const Color(0xFF34A853);
-    canvas.drawArc(rect, 3.14159, 1.5708, false, paint);
-
-    // Draw white "G" in center
-    final textSpan = TextSpan(
-      text: 'G',
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-      ),
-    );
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        center.dx - textPainter.width / 2,
-        center.dy - textPainter.height / 2,
-      ),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

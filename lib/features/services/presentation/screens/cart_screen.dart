@@ -9,6 +9,7 @@ import 'package:hancord_test/features/services/presentation/widgets/wallet_balan
 import 'package:hancord_test/features/services/presentation/widgets/bill_details_section.dart';
 import 'package:hancord_test/features/services/presentation/widgets/grand_total_card.dart';
 import 'package:hancord_test/features/services/presentation/providers/cart_provider.dart';
+import 'package:hancord_test/features/services/presentation/providers/coupon_provider.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -24,13 +25,10 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     {'name': 'Bathroom Cleaning', 'price': 500, 'image': Images.service},
   ];
 
-  String couponCode = '';
-  bool couponApplied = false;
   final TextEditingController couponController = TextEditingController();
 
   // Bill details
   double get taxesAndFees => 50.0;
-  double get couponDiscount => couponApplied ? 150.0 : 0.0;
 
   @override
   void dispose() {
@@ -41,6 +39,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
   @override
   Widget build(BuildContext context) {
     final cartState = ref.watch(cartProvider);
+    final couponState = ref.watch(couponProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
     final double bottomPadding = 16.0;
 
@@ -59,6 +58,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
 
     // Calculate bill details from cart items
     final double subtotal = cartState.totalPrice;
+    final double couponDiscount = couponState.couponApplied ? 150.0 : 0.0;
     final double total = subtotal + taxesAndFees - couponDiscount;
 
     // Show loading or empty state
@@ -98,12 +98,15 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             ),
             elevation: 0,
             centerTitle: true,
-            title: Text(
-              'Cart',
-              style: getTextStylNunito(
-                color: const Color(0xff090F47),
-                fontWeight: FontWeight.w600,
-                fontSize: 15,
+            title: Transform.translate(
+              offset: Offset(40, 0),
+              child: Text(
+                'Cart',
+                style: getTextStylNunito(
+                  color: const Color(0xff090F47),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
             ),
           ),
@@ -278,10 +281,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     CouponCodeSection(
                       couponController: couponController,
                       onApplyCoupon: () {
-                        setState(() {
-                          couponCode = couponController.text.trim();
-                          couponApplied = couponCode.isNotEmpty;
-                        });
+                        final code = couponController.text.trim();
+                        ref.read(couponProvider.notifier).applyCoupon(code);
                       },
                     ),
                     const SizedBox(height: 16),
@@ -295,15 +296,12 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                       subtotal: subtotal,
                       cartItems: selectedServices,
                       taxesAndFees: taxesAndFees,
-                      couponApplied: couponApplied,
+                      couponApplied: couponState.couponApplied,
                       couponDiscount: couponDiscount,
                       total: total,
                       onRemoveCoupon: () {
-                        setState(() {
-                          couponApplied = false;
-                          couponCode = '';
-                          couponController.clear();
-                        });
+                        ref.read(couponProvider.notifier).removeCoupon();
+                        couponController.clear();
                       },
                     ),
 

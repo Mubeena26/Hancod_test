@@ -38,3 +38,4 @@ class WalletBalanceInfo extends StatelessWidget {
   }
 }
 
+

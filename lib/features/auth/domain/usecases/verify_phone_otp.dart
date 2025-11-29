@@ -12,3 +12,4 @@ class VerifyPhoneOtp {
     return await repository.verifyOtp(verificationId, otp);
   }
 }
+

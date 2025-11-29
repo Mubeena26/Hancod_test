@@ -11,3 +11,4 @@ class SendPhoneOtp {
     return await repository.sendOtpToPhone(phoneNumber);
   }
 }
+

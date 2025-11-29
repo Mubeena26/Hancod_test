@@ -22,3 +22,4 @@ class User {
   @override
   int get hashCode => uid.hashCode;
 }
+

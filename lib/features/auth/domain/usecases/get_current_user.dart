@@ -12,3 +12,4 @@ class GetCurrentUser {
     return await repository.getCurrentUser();
   }
 }
+

@@ -94,3 +94,4 @@ CREATE POLICY "Users can delete own cart items"
 
 The app will work with local cart state even if Supabase is not configured. Cart items will be stored in memory and will be lost when the app is closed. To persist cart items across app sessions, set up Supabase as described above.
 
+

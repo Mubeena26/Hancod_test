@@ -19,3 +19,4 @@ class HomeBanner extends StatelessWidget {
     );
   }
 }
+

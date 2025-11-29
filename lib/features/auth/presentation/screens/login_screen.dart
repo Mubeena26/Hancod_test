@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:hancord_test/core/utils/colors.dart';
 import 'package:hancord_test/core/utils/svgs.dart';
+import 'package:hancord_test/core/utils/textStyles..dart';
 import 'package:hancord_test/features/auth/presentation/providers/auth_providers.dart';
 import 'package:hancord_test/features/auth/presentation/screens/otp_screen.dart';
 import 'package:hancord_test/features/home/presentation/screens/home_screen.dart';
@@ -108,18 +109,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min, // keep row compact
                             children: [
-                              SvgPicture.asset(
-                                Svgs.signInGoogle,
-                                width: 34,
-                                height: 34,
+                              Transform.translate(
+                                offset: Offset(0, 5),
+                                child: SvgPicture.asset(
+                                  Svgs.signInGoogle,
+                                  width: 44,
+                                  height: 44,
+                                ),
                               ),
                               const SizedBox(width: 12),
-                              const Text(
+                              Text(
                                 'Continue with Google',
-                                style: TextStyle(
+                                style: getTextStylNunito(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  fontFamily: 'rf-dewi',
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ],
@@ -152,12 +155,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     elevation: 0,
                     disabledBackgroundColor: Colors.grey[300],
                   ),
-                  child: const Text(
+                  child: Text(
                     'Phone',
-                    style: TextStyle(
+                    style: getTextStylNunito(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      fontFamily: 'rf-dewi',
                     ),
                   ),
                 ),

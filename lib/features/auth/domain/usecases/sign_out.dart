@@ -11,3 +11,4 @@ class SignOut {
     return await repository.signOut();
   }
 }
+

@@ -41,3 +41,4 @@ class AuthState extends Equatable {
     isOtpSent,
   ];
 }
+

@@ -20,9 +20,9 @@ class HomeHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // LEFT SIDE → Address + Check Icon
-            Padding(
-              padding: EdgeInsetsGeometry.only(right: 14, left: 14),
-              child: Flexible(
+            Flexible(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -38,11 +38,7 @@ class HomeHeader extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 6),
-                    Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                      size: 18,
-                    ),
+                    Icon(Icons.check_circle, color: Colors.green, size: 18),
                   ],
                 ),
               ),

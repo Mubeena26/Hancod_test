@@ -12,7 +12,6 @@ void main() async {
     await SupabaseService.initialize();
   } catch (e) {
     // Supabase initialization failed, but app can still work with local cart
-    print('Supabase initialization failed: $e');
   }
   runApp(const ProviderScope(child: MyApp()));
 }

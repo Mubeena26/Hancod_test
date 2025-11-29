@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:hancord_test/core/network/supabase_client.dart';
 import 'package:hancord_test/features/services/domain/entitities/service_model.dart';
 import 'package:hancord_test/features/services/data/dummy_services_data.dart';
@@ -65,6 +66,10 @@ class CartNotifier extends StateNotifier<CartState> {
     _initializeCart();
   }
 
+  // Get current Firebase user UID dynamically
+  String? get _firebaseUserId =>
+      firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+
   SupabaseClient? get _supabase {
     try {
       return SupabaseService.client;
@@ -91,7 +96,6 @@ class CartNotifier extends StateNotifier<CartState> {
       final cartJson = prefs.getString(_cartStorageKey);
 
       if (cartJson != null) {
-        print('Loading cart from local storage');
         final Map<String, dynamic> cartData = json.decode(cartJson);
         final Map<int, CartItem> cartItems = {};
         final allServices = DummyServicesData.getServices();
@@ -149,12 +153,9 @@ class CartNotifier extends StateNotifier<CartState> {
         });
 
         state = state.copyWith(items: cartItems);
-        print('Loaded ${cartItems.length} items from local storage');
-      } else {
-        print('No local cart data found');
       }
     } catch (e) {
-      print('Error loading cart from local storage: $e');
+      // Error loading cart from local storage
     }
   }
 
@@ -168,9 +169,8 @@ class CartNotifier extends StateNotifier<CartState> {
       });
 
       await prefs.setString(_cartStorageKey, json.encode(cartData));
-      print('Saved ${state.items.length} items to local storage');
     } catch (e) {
-      print('Error saving cart to local storage: $e');
+      // Error saving cart to local storage
     }
   }
 
@@ -178,31 +178,23 @@ class CartNotifier extends StateNotifier<CartState> {
     try {
       final supabase = _supabase;
       if (supabase == null) {
-        print('Supabase not available, using local cart only');
         return;
       }
 
-      // Get current user
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        // User not logged in, keep local cart
-        print('User not logged in, using local cart only');
+      // Use Firebase UID instead of Supabase auth user
+      final userId = _firebaseUserId;
+      if (userId == null) {
         return;
       }
 
-      print('Loading cart from Supabase for user: ${user.id}');
-
-      // Fetch cart items from Supabase
+      // Fetch cart items from Supabase (no join needed, we use dummy data for services)
       final response = await supabase
           .from('cart_items')
-          .select('*, services(*)')
-          .eq('user_id', user.id);
-
-      print('Supabase returned ${response.length} cart items');
+          .select()
+          .eq('user_id', userId);
 
       // If Supabase has no items, keep local cart (don't overwrite)
       if (response.isEmpty) {
-        print('Supabase cart is empty, keeping local cart');
         return;
       }
 
@@ -240,11 +232,8 @@ class CartNotifier extends StateNotifier<CartState> {
       // Update state with Supabase data
       state = state.copyWith(items: cartItems);
       await _saveCartToLocal(); // Sync Supabase data to local storage
-      print('Cart loaded from Supabase: ${cartItems.length} items');
     } catch (e) {
       // If Supabase table doesn't exist or other error, continue with local cart
-      print('Error loading from Supabase: $e');
-      print('Continuing with local cart only');
       // Don't clear local cart on error - keep what we have
     }
   }
@@ -252,7 +241,7 @@ class CartNotifier extends StateNotifier<CartState> {
   Future<void> addToCart(ServiceModel service) async {
     try {
       final supabase = _supabase;
-      final user = supabase?.auth.currentUser;
+      final userId = _firebaseUserId;
       final serviceId = service.id;
 
       // Update local state
@@ -273,16 +262,15 @@ class CartNotifier extends StateNotifier<CartState> {
       await _saveCartToLocal();
 
       // Sync with Supabase if user is logged in and Supabase is available
-      if (supabase != null && user != null) {
+      if (supabase != null && userId != null) {
         try {
           await supabase.from('cart_items').upsert({
-            'user_id': user.id,
+            'user_id': userId,
             'service_id': serviceId,
             'quantity': currentItems[serviceId]!.quantity,
           });
         } catch (e) {
           // Supabase sync failed, but local state is updated
-          print('Failed to sync with Supabase: $e');
         }
       }
     } catch (e) {
@@ -301,16 +289,16 @@ class CartNotifier extends StateNotifier<CartState> {
         // Save to local storage
         await _saveCartToLocal();
 
-        final user = supabase?.auth.currentUser;
-        if (supabase != null && user != null) {
+        final userId = _firebaseUserId;
+        if (supabase != null && userId != null) {
           try {
             await supabase.from('cart_items').upsert({
-              'user_id': user.id,
+              'user_id': userId,
               'service_id': serviceId,
               'quantity': currentItems[serviceId]!.quantity,
             });
           } catch (e) {
-            print('Failed to sync with Supabase: $e');
+            // Failed to sync with Supabase
           }
         }
       }
@@ -334,12 +322,12 @@ class CartNotifier extends StateNotifier<CartState> {
         // Save to local storage
         await _saveCartToLocal();
 
-        final user = supabase?.auth.currentUser;
-        if (supabase != null && user != null) {
+        final userId = _firebaseUserId;
+        if (supabase != null && userId != null) {
           try {
             if (currentItems.containsKey(serviceId)) {
               await supabase.from('cart_items').upsert({
-                'user_id': user.id,
+                'user_id': userId,
                 'service_id': serviceId,
                 'quantity': currentItems[serviceId]!.quantity,
               });
@@ -347,11 +335,11 @@ class CartNotifier extends StateNotifier<CartState> {
               await supabase
                   .from('cart_items')
                   .delete()
-                  .eq('user_id', user.id)
+                  .eq('user_id', userId)
                   .eq('service_id', serviceId);
             }
           } catch (e) {
-            print('Failed to sync with Supabase: $e');
+            // Failed to sync with Supabase
           }
         }
       }
@@ -370,16 +358,16 @@ class CartNotifier extends StateNotifier<CartState> {
       // Save to local storage
       await _saveCartToLocal();
 
-      final user = supabase?.auth.currentUser;
-      if (supabase != null && user != null) {
+      final userId = _firebaseUserId;
+      if (supabase != null && userId != null) {
         try {
           await supabase
               .from('cart_items')
               .delete()
-              .eq('user_id', user.id)
+              .eq('user_id', userId)
               .eq('service_id', serviceId);
         } catch (e) {
-          print('Failed to sync with Supabase: $e');
+          // Failed to sync with Supabase
         }
       }
     } catch (e) {
@@ -393,6 +381,23 @@ class CartNotifier extends StateNotifier<CartState> {
   }
 }
 
+// Provider to watch Firebase auth state changes
+final _firebaseAuthStateProvider = StreamProvider<firebase_auth.User?>((ref) {
+  return firebase_auth.FirebaseAuth.instance.authStateChanges();
+});
+
 final cartProvider = StateNotifierProvider<CartNotifier, CartState>((ref) {
-  return CartNotifier();
+  final notifier = CartNotifier();
+
+  // Listen to Firebase auth state changes and reload cart when user logs in/out
+  ref.listen(_firebaseAuthStateProvider, (previous, next) {
+    final previousUid = previous?.valueOrNull?.uid;
+    final nextUid = next.valueOrNull?.uid;
+    if (previousUid != nextUid) {
+      // User logged in or out, reload cart from Supabase
+      notifier._initializeCart();
+    }
+  });
+
+  return notifier;
 });
